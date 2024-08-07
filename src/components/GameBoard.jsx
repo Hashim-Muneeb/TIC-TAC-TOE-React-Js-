@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 
 const initialGameBoard = [
   [null, null, null],
@@ -6,19 +7,24 @@ const initialGameBoard = [
   [null, null, null],
 ];
 
-function GameBoard({onSelectSquare, acttivePlayerSymbol}) {
+function GameBoard({ onSelectSquare, turns = [] }) {
   const [gameBoard, setGameBoard] = useState(initialGameBoard);
 
+  // Update game board based on turns prop
+  useEffect(() => {
+    const newGameBoard = initialGameBoard.map(row => row.slice());
+    for (const turn of turns) {
+      const { square, player } = turn;
+      const { row, col } = square;
+      newGameBoard[row][col] = player;
+    }
+    setGameBoard(newGameBoard);
+  }, [turns]);
+
   function handleSelectedSquare(rowIndex, colIndex) {
-    setGameBoard((prevGameBoard) => {
-      const updatedBoard = prevGameBoard.map((row, rIdx) => 
-        row.map((col, cIdx) => 
-          rIdx === rowIndex && cIdx === colIndex ? acttivePlayerSymbol : col
-        )
-      );
-      return updatedBoard;
-    });
-    onSelectSquare();
+    if (!gameBoard[rowIndex][colIndex]) {
+      onSelectSquare(rowIndex, colIndex);
+    }
   }
 
   return (
@@ -30,6 +36,7 @@ function GameBoard({onSelectSquare, acttivePlayerSymbol}) {
               <li key={colIndex}>
                 <button
                   onClick={() => handleSelectedSquare(rowIndex, colIndex)}
+                  disabled={!!playerSymbol}
                 >
                   {playerSymbol}
                 </button>
@@ -41,5 +48,18 @@ function GameBoard({onSelectSquare, acttivePlayerSymbol}) {
     </ol>
   );
 }
+
+GameBoard.propTypes = {
+  onSelectSquare: PropTypes.func.isRequired,
+  turns: PropTypes.arrayOf(
+    PropTypes.shape({
+      square: PropTypes.shape({
+        row: PropTypes.number.isRequired,
+        col: PropTypes.number.isRequired,
+      }).isRequired,
+      player: PropTypes.string.isRequired,
+    })
+  ),
+};
 
 export default GameBoard;
